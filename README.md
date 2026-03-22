@@ -1,4 +1,4 @@
-English | [中文](README.zh.md)
+English | [中文](README.cn.md)
 
 # MPT-Bench-v1 (2026.3.22)
 
