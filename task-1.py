@@ -13,7 +13,7 @@ class MultipleChoiceAnswers(BaseModel):
 
 
 @kbench.task(name="MPT-Bench - 2026.3.22 - Part 1")
-def solve_math_problems(llm) -> tuple[int, int]:
+def solve_math_problems(llm) -> tuple[int, int, list[bool]]:
     prompt = r"""
 Please answer the following 10 multiple-choice questions. Your response must be a JSON object with a single key ‘answers’ which holds a list of 10 strings, where each string is the letter of the correct option (A, B, C, or D).
 
@@ -56,6 +56,7 @@ A. \([-1,1]\)  B. \(\left[-\frac{1}{2},\frac{1}{2}\right]\)  C. \([-\sqrt{2},\sq
     correct_answers = ["D", "D", "B", "C", "D", "C", "C", "A", "A", "A"]
     total_score = len(correct_answers) * 3
     earned_score = 0
+    passed_statuses = []
 
     try:
         response = llm.prompt(prompt, schema=MultipleChoiceAnswers)
@@ -66,6 +67,7 @@ A. \([-1,1]\)  B. \(\left[-\frac{1}{2},\frac{1}{2}\right]\)  C. \([-\sqrt{2},\sq
             zip(model_answers, correct_answers)
         ):
             is_correct = model_ans == correct_ans
+            passed_statuses.append(is_correct)
             if is_correct:
                 earned_score += 3
             kbench.assertions.assert_true(
@@ -77,9 +79,9 @@ A. \([-1,1]\)  B. \(\left[-\frac{1}{2},\frac{1}{2}\right]\)  C. \([-\sqrt{2},\sq
         kbench.assertions.assert_fail(
             expectation=f"The output was not valid JSON or did not match the schema. Error: {e.error}"
         )
-        return 0, total_score
+        return 0, total_score, [False] * 10
 
-    return earned_score, total_score
+    return earned_score, total_score, passed_statuses
 
 
 solve_math_problems.run(kbench.llm)

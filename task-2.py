@@ -26,7 +26,7 @@ class MathAnswers(BaseModel):
 
 
 @kbench.task(name="MPT-Bench - 2026.3.22 - Part 2")
-def solve_math_problems(llm) -> tuple[int, int]:
+def solve_math_problems(llm) -> tuple[int, int, list[bool]]:
     prompt = r"""
 Solve the following math problems. Provide your answers in a single JSON object matching the specified schema. For fill-in-the-blank questions requiring fractions or square roots, use LaTeX format (e.g., \\frac{a}{b}, \\sqrt{c}). For interval questions, use standard interval notation (e.g., [a, b) or (c, d]).
 
@@ -55,6 +55,8 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
 """
     total_score = 30
     earned_score = 0
+    passed_statuses = []
+
     try:
         response = llm.prompt(prompt, schema=MathAnswers)
 
@@ -63,6 +65,7 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
                 r"\\frac\{\s*\\sqrt\{3\}\s*\}\{\s*3\s*\}", response.q11.replace(" ", "")
             )
         )
+        passed_statuses.append(q11_correct)
         kbench.assertions.assert_true(
             q11_correct,
             expectation="Question 11 answer should be \\frac{\\sqrt{3}}{3}.",
@@ -73,6 +76,7 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
         q12_correct = bool(
             re.search(r"\\frac\{\s*27\s*\}\{\s*8\s*\}", response.q12.replace(" ", ""))
         )
+        passed_statuses.append(q12_correct)
         kbench.assertions.assert_true(
             q12_correct, expectation="Question 12 answer should be \\frac{27}{8}."
         )
@@ -82,6 +86,7 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
         q13_correct = bool(
             re.search(r"\\sqrt\{\s*5\s*\}", response.q13.replace(" ", ""))
         )
+        passed_statuses.append(q13_correct)
         kbench.assertions.assert_true(
             q13_correct, expectation="Question 13 answer should be \\sqrt{5}."
         )
@@ -96,7 +101,9 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
         kbench.assertions.assert_true(
             q14_2_correct, expectation="Question 14(2) answer should be (0, 2]."
         )
-        if q14_1_correct and q14_2_correct:
+        q14_correct = q14_1_correct and q14_2_correct
+        passed_statuses.append(q14_correct)
+        if q14_correct:
             earned_score += 6
 
         q15_correct = (
@@ -105,6 +112,7 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
             and "4" in response.q15
             and "1" not in response.q15
         )
+        passed_statuses.append(q15_correct)
         kbench.assertions.assert_true(
             q15_correct, expectation="Question 15 answer should be 2 3 4."
         )
@@ -115,8 +123,8 @@ The numbers of all correct statements are \(\underline{\hspace{3cm}}\).
         kbench.assertions.assert_fail(
             f"Failed to parse LLM response into MathAnswers schema. Error: {e.error}"
         )
-        return 0, total_score
-    return earned_score, total_score
+        return 0, total_score, [False] * 5
+    return earned_score, total_score, passed_statuses
 
 
 solve_math_problems.run(kbench.llm)
