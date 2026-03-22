@@ -9,7 +9,7 @@ class Scoring(BaseModel):
 
 
 @kbench.task(name="MPT-Bench - 2026.3.22 - Part 3")
-def solve_math_problems(llm) -> tuple[int, int, list[bool]]:
+def solve_math_problems(llm) -> tuple[int, int]:
     prompt = textwrap.dedent(
         r"""
 Please solve the following two math problems. Show your work and provide a clear final answer for each.
@@ -57,10 +57,10 @@ Please solve the following two math problems. Show your work and provide a clear
             scoring.q17_score == 15, expectation=f"Q17 Score: {scoring.q17_score}/15"
         )
 
-        return earned_score, 25, passed_statuses
+        return earned_score, 25
     except Exception as e:
         kbench.assertions.assert_fail(expectation=f"Judging failed: {str(e)}")
-        return 0, 25, [False] * 2
+        return 0, 25
 
 
 solve_math_problems.run(kbench.llm)

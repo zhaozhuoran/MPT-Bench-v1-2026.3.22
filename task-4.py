@@ -8,7 +8,7 @@ class Scoring(BaseModel):
 
 
 @kbench.task(name="MPT-Bench - 2026.3.22 - Part 4")
-def gaokao_math_problems(llm) -> tuple[int, int, list[bool]]:
+def gaokao_math_problems(llm) -> tuple[int, int]:
     problem_text = textwrap.dedent(
         r"""
 Please solve the following math problem. Show your work and provide a clear final answer for each part.
@@ -50,10 +50,10 @@ where \max\{x_{1},x_{2},\ldots,x_{s}\} denotes the largest of these s numbers.
             scoring.q18_score == 15, expectation=f"Q18 Score: {scoring.q18_score}/15"
         )
 
-        return earned_score, 15, passed_statuses
+        return earned_score, 15
     except Exception as e:
         kbench.assertions.assert_fail(expectation=f"Judging failed: {str(e)}")
-        return 0, 15, [False]
+        return 0, 15
 
 
 gaokao_math_problems.run(kbench.llm)
